@@ -988,10 +988,76 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <div class="card-body">
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="suppliers" role="tabpanel">
-                            <!-- Aquí va el código de la tabla de proveedores -->
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Proveedor</th>
+                                            <th>Contacto</th>
+                                            <th>Email</th>
+                                            <th>Teléfono</th>
+                                            <th>Productos</th>
+                                            <th>Calificación</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($suppliers as $supplier): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($supplier['name']); ?></td>
+                                            <td><?php echo htmlspecialchars($supplier['contact']); ?></td>
+                                            <td><?php echo htmlspecialchars($supplier['email']); ?></td>
+                                            <td><?php echo htmlspecialchars($supplier['phone']); ?></td>
+                                            <td><?php echo htmlspecialchars($supplier['products']); ?></td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="me-2"><?php echo number_format($supplier['rating'], 1); ?></span>
+                                                    <div class="stars">
+                                                        <?php for($i = 1; $i <= 5; $i++): ?>
+                                                            <i class="fas fa-star <?php echo $i <= $supplier['rating'] ? 'text-warning' : 'text-muted'; ?>"></i>
+                                                        <?php endfor; ?>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                         <div class="tab-pane fade" id="orders" role="tabpanel">
-                            <!-- Aquí va el código de la tabla de órdenes -->
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID Orden</th>
+                                            <th>Fecha</th>
+                                            <th>Proveedor</th>
+                                            <th>Items</th>
+                                            <th>Monto</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($purchase_orders as $order): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($order['id']); ?></td>
+                                            <td><?php echo $order['date']; ?></td>
+                                            <td><?php echo htmlspecialchars($order['supplier']); ?></td>
+                                            <td><?php echo htmlspecialchars($order['items']); ?></td>
+                                            <td>$<?php echo number_format($order['amount'], 2); ?></td>
+                                            <td>
+                                                <span class="badge <?php 
+                                                    echo $order['status'] == 'Entregado' ? 'bg-success' : 
+                                                        ($order['status'] == 'Pendiente' ? 'bg-warning' : 'bg-danger'); 
+                                                ?>">
+                                                    <?php echo $order['status']; ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1133,426 +1199,167 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     });
     
     /**
-     * Configuración del gráfico de inventario y manejador de carga de archivos
-     */
-    const inventoryChartCtx = document.getElementById('inventoryChart').getContext('2d');
-    const inventoryChart = new Chart(inventoryChartCtx, {
-        type: 'bar',
-        data: {
-            labels: [<?php echo "'" . implode("', '", array_column($materials, 'name')) . "'"; ?>],
-            datasets: [
-                {
-                    label: 'Cantidad Actual',
-                    data: [<?php echo implode(", ", array_column($materials, 'current_qty')); ?>],
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1,
-                    order: 2
-                },
-                {
-                    label: 'Cantidad Mínima',
-                    data: [<?php echo implode(", ", array_column($materials, 'min_qty')); ?>],
-                    type: 'line',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 2,
-                    fill: false,
-                    order: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 15
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    titleColor: '#666',
-                    bodyColor: '#666',
-                    borderColor: '#ddd',
-                    borderWidth: 1,
-                    padding: 10,
-                    boxPadding: 5,
-                    usePointStyle: true,
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + context.parsed.y + ' unidades';
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        borderDash: [2, 2]
-                    },
-                    title: {
-                        display: true,
-                        text: 'Cantidad'
-                    }
-                }
-            }
-        }
-    });
-
-    // Configuración de los nuevos gráficos
-    const materialsChartCtx = document.getElementById('materialsChart').getContext('2d');
-    const suppliersChartCtx = document.getElementById('suppliersChart').getContext('2d');
-    const ordersChartCtx = document.getElementById('ordersChart').getContext('2d');
-    const statusChartCtx = document.getElementById('statusChart').getContext('2d');
-
-    // Gráfico de Inventario de Materiales
-    const materialsChart = new Chart(materialsChartCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Cemento', 'Varillas', 'Ladrillos', 'Tuberías', 'Cable', 'Pintura', 'Azulejos', 'Tablas'],
-            datasets: [{
-                label: 'Cantidad Actual',
-                data: [15, 120, 850, 35, 8, 2, 200, 45],
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }, {
-                label: 'Cantidad Mínima',
-                data: [20, 50, 1000, 30, 10, 5, 100, 40],
-                type: 'line',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 2,
-                fill: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Cantidad'
-                    }
-                }
-            }
-        }
-    });
-
-    // Gráfico de Proveedores
-    const suppliersChart = new Chart(suppliersChartCtx, {
-        type: 'pie',
-        data: {
-            labels: ['BuildSupply Co.', 'MetalWorks Inc.', 'PlumbFit Solutions', 'ElectroPro Inc.', 'ColorTech Ltd.'],
-            datasets: [{
-                data: [12500, 9800, 7500, 6200, 5800],
-                backgroundColor: [
-                    'rgba(54, 162, 235, 0.8)',
-                    'rgba(255, 99, 132, 0.8)',
-                    'rgba(255, 206, 86, 0.8)',
-                    'rgba(75, 192, 192, 0.8)',
-                    'rgba(153, 102, 255, 0.8)'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right'
-                },
-                title: {
-                    display: true,
-                    text: 'Valor de Compras por Proveedor ($)'
-                }
-            }
-        }
-    });
-
-    // Gráfico de Órdenes de Compra
-    const ordersChart = new Chart(ordersChartCtx, {
-        type: 'line',
-        data: {
-            labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo'],
-            datasets: [{
-                label: 'Entradas',
-                data: [25, 30, 28, 35, 32],
-                borderColor: 'rgba(54, 162, 235, 1)',
-                backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                tension: 0.4,
-                fill: true
-            }, {
-                label: 'Salidas',
-                data: [18, 22, 25, 30, 28],
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top'
-                },
-                title: {
-                    display: true,
-                    text: 'Movimientos de Inventario por Mes'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Cantidad de Items'
-                    }
-                }
-            }
-        }
-    });
-
-    // Gráfico de Estado del Inventario (Donut)
-    const statusChart = new Chart(statusChartCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Críticos', 'Bajo Stock', 'OK'],
-            datasets: [{
-                data: [
-                    <?php echo $critical_items; ?>,
-                    <?php echo $low_items; ?>,
-                    <?php echo $ok_items; ?>
-                ],
-                backgroundColor: [
-                    '#dc3545',  // Rojo para críticos
-                    '#ffc107',  // Amarillo para bajo stock
-                    '#198754'   // Verde para OK
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                title: {
-                    display: true,
-                    text: 'Estado del Inventario'
-                }
-            }
-        }
-    });
-
-    // Manejador para cambio de vista en el gráfico de materiales
-    document.querySelectorAll('[data-view]').forEach(button => {
-        button.addEventListener('click', function() {
-            const view = this.dataset.view;
-            
-            // Actualizar estado activo de los botones
-            document.querySelectorAll('[data-view]').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            
-            if (view === 'value') {
-                materialsChart.data.datasets[0].label = 'Valor ($)';
-                materialsChart.data.datasets[0].data = [<?php echo implode(", ", array_map(function($m) { 
-                    return $m['current_qty'] * $m['price']; 
-                }, $materials)); ?>];
-            } else {
-                materialsChart.data.datasets[0].label = 'Cantidad Actual';
-                materialsChart.data.datasets[0].data = [<?php echo implode(", ", array_column($materials, 'current_qty')); ?>];
-            }
-            
-            materialsChart.update();
-        });
-    });
-
-    // Manejo de carga de archivos
-    const dropZone = document.querySelector('.card-body');
-    const fileInput = document.getElementById('excelFile');
-
-    // Prevenir comportamiento por defecto del navegador
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    // Resaltar zona de drop
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, highlight, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, unhighlight, false);
-    });
-
-    function highlight(e) {
-        dropZone.classList.add('border', 'border-primary', 'bg-light');
-    }
-
-    function unhighlight(e) {
-        dropZone.classList.remove('border', 'border-primary', 'bg-light');
-    }
-
-    // Manejar archivo soltado
-    dropZone.addEventListener('drop', handleDrop, false);
-
-    function handleDrop(e) {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-
-        handleFiles(files);
-    }
-
-    function handleFiles(files) {
-        if (files.length > 0) {
-            fileInput.files = files;
-            // Mostrar nombre del archivo seleccionado
-            const fileName = files[0].name;
-            const fileInfo = document.createElement('div');
-            fileInfo.classList.add('alert', 'alert-info', 'mt-3', 'mb-0');
-            fileInfo.innerHTML = `
-                <i class="fas fa-file-excel me-2"></i>
-                Archivo seleccionado: ${fileName}
-                <button type="button" class="btn-close float-end" onclick="this.parentElement.remove()"></button>
-            `;
-            dropZone.appendChild(fileInfo);
-        }
-    }
-
-    // Manejador para el input de archivo tradicional
-    fileInput.addEventListener('change', function(e) {
-        handleFiles(this.files);
-    });
-
-    /**
      * Configuración de los gráficos
      */
-    const mainChartCtx = document.getElementById('mainChart').getContext('2d');
-
-    // Gráfico principal de niveles de inventario
-    const mainChart = new Chart(mainChartCtx, {
-        type: 'bar',
-        data: {
-            labels: <?php echo json_encode($inventory_data['labels']); ?>,
-            datasets: [{
-                label: 'Cantidad de Items',
-                data: <?php echo json_encode($inventory_data['items']); ?>,
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }, {
-                label: 'Valor ($)',
-                data: <?php echo json_encode($inventory_data['valores']); ?>,
-                type: 'line',
-                yAxisID: 'y1',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 2,
-                fill: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Cantidad'
-                    }
-                },
-                y1: {
-                    position: 'right',
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Valor ($)'
-                    }
-                }
-            }
-        }
-    });
-
-    // Cambio entre tipos de gráficos
-    document.querySelectorAll('[data-chart]').forEach(button => {
-        button.addEventListener('click', function() {
-            const chartType = this.dataset.chart;
-            
-            // Actualizar estado activo de los botones
-            document.querySelectorAll('[data-chart]').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            
-            if (chartType === 'categories') {
-                // Agrupar datos por categoría
-                const categoryData = {};
-                <?php foreach ($materials as $material): ?>
-                if (!categoryData['<?php echo $material['category']; ?>']) {
-                    categoryData['<?php echo $material['category']; ?>'] = 0;
-                }
-                categoryData['<?php echo $material['category']; ?>'] += <?php echo $material['current_qty']; ?>;
-                <?php endforeach; ?>
-                
-                mainChart.data.labels = Object.keys(categoryData);
-                mainChart.data.datasets = [{
-                    label: 'Items por Categoría',
-                    data: Object.values(categoryData),
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }];
-            } else {
-                // Restaurar gráfico original
-                mainChart.data.labels = [<?php echo "'" . implode("', '", array_column($materials, 'name')) . "'"; ?>];
-                mainChart.data.datasets = [{
-                    label: 'Stock Actual',
-                    data: [<?php echo implode(", ", array_column($materials, 'current_qty')); ?>],
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de Inventario de Materiales (mainChart)
+        const mainChartCtx = document.getElementById('mainChart').getContext('2d');
+        const mainChart = new Chart(mainChartCtx, {
+            type: 'bar',
+            data: {
+                labels: <?php echo json_encode(array_column($materials, 'name')); ?>,
+                datasets: [{
+                    label: 'Cantidad Actual',
+                    data: <?php echo json_encode(array_column($materials, 'current_qty')); ?>,
                     backgroundColor: 'rgba(54, 162, 235, 0.5)',
                     borderColor: 'rgba(54, 162, 235, 1)',
                     borderWidth: 1
                 }, {
-                    label: 'Stock Mínimo',
-                    data: [<?php echo implode(", ", array_column($materials, 'min_qty')); ?>],
+                    label: 'Cantidad Mínima',
+                    data: <?php echo json_encode(array_column($materials, 'min_qty')); ?>,
                     type: 'line',
                     borderColor: 'rgba(255, 99, 132, 1)',
                     borderWidth: 2,
                     fill: false
-                }];
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
             }
-            
-            mainChart.update();
+        });
+
+        // Gráfico de Proveedores (suppliersChart)
+        const suppliersChartCtx = document.getElementById('suppliersChart').getContext('2d');
+        const suppliersChart = new Chart(suppliersChartCtx, {
+            type: 'pie',
+            data: {
+                labels: <?php echo json_encode(array_keys($dashboard_data['proveedores_top'])); ?>,
+                datasets: [{
+                    data: <?php echo json_encode(array_values($dashboard_data['proveedores_top'])); ?>,
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(153, 102, 255, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Valor de Compras por Proveedor ($)'
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Órdenes de Compra (ordersChart)
+        const ordersChartCtx = document.getElementById('ordersChart').getContext('2d');
+        const ordersChart = new Chart(ordersChartCtx, {
+            type: 'line',
+            data: {
+                labels: <?php echo json_encode(array_keys($dashboard_data['historial_mensual'])); ?>,
+                datasets: [{
+                    label: 'Entradas',
+                    data: <?php echo json_encode(array_column($dashboard_data['historial_mensual'], 'entradas')); ?>,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Salidas',
+                    data: <?php echo json_encode(array_column($dashboard_data['historial_mensual'], 'salidas')); ?>,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Estado del Inventario (statusChart)
+        const statusChartCtx = document.getElementById('statusChart').getContext('2d');
+        const statusChart = new Chart(statusChartCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Críticos', 'Bajo Stock', 'OK'],
+                datasets: [{
+                    data: [
+                        <?php echo $critical_items; ?>,
+                        <?php echo $low_items; ?>,
+                        <?php echo $ok_items; ?>
+                    ],
+                    backgroundColor: [
+                        '#dc3545',  // Rojo para críticos
+                        '#ffc107',  // Amarillo para bajo stock
+                        '#198754'   // Verde para OK
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Manejador para cambio de vista en el gráfico de materiales
+        document.querySelectorAll('[data-view]').forEach(button => {
+            button.addEventListener('click', function() {
+                const view = this.dataset.view;
+                
+                // Actualizar estado activo de los botones
+                document.querySelectorAll('[data-view]').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                if (view === 'value') {
+                    mainChart.data.datasets[0].label = 'Valor ($)';
+                    mainChart.data.datasets[0].data = <?php echo json_encode(array_map(function($m) { 
+                        return $m['current_qty'] * $m['price']; 
+                    }, $materials)); ?>;
+                } else {
+                    mainChart.data.datasets[0].label = 'Cantidad Actual';
+                    mainChart.data.datasets[0].data = <?php echo json_encode(array_column($materials, 'current_qty')); ?>;
+                }
+                
+                mainChart.update();
+            });
         });
     });
 
