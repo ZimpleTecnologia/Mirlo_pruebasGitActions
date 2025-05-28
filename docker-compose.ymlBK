@@ -1,4 +1,5 @@
 version: '3.8'
+
 networks:
   proxy:
     external: false
@@ -74,13 +75,9 @@ services:
       - internal
       - proxy
 
-  # Aplicación web PHP - ACTUALIZADA para usar imagen de Docker Hub
+  # Aplicación web PHP
   web:
-    # OPCIÓN 1: Para desarrollo (usando build local)
-    # build: ./web
-    
-    # OPCIÓN 2: Para producción (usando imagen de Docker Hub)
-    image: tu-usuario-dockerhub/mirlo-web:latest
+    build: ./web
     container_name: mirlo_web
     restart: always
     environment:
@@ -89,8 +86,6 @@ services:
       LETSENCRYPT_HOST: mirloconstrucciones.top,www.mirloconstrucciones.top
       LETSENCRYPT_EMAIL: info@zimple.top
     volumes:
-      # Monta tu código fuente para desarrollo
-      # En producción, podrías remover esto si el código está en la imagen
       - ./src:/var/www/html
     depends_on:
       - db
